@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from './OrbitControls.js';
 import { PlyLoader } from './loaders/ply/PlyLoader.js';
 import { SplatLoader } from './loaders/splat/SplatLoader.js';
@@ -418,6 +419,9 @@ export class Viewer {
                                           this.cameraFocalLengthY = this.camera.projectionMatrix.elements[5] *
                                           this.devicePixelRatio * renderDimensions.y * 0.45;
                 this.splatMesh.updateUniforms(renderDimensions, this.cameraFocalLengthX, this.cameraFocalLengthY);
+
+                this.splatMesh.splatAnim.update(0.1);
+                this.splatMesh.syncWithAnim();
             }
         };
 
@@ -438,6 +442,29 @@ export class Viewer {
 
     setSplatSceneLoadPromise(promise) {
         this.splatSceneLoadPromise = promise;
+    }
+
+    loadReferenceMesh(path, onFinished) {
+
+        const loader = new GLTFLoader();
+        const splatMesh = this.splatMesh;
+        const threeScene = this.threeScene;
+        loader.load(
+          path,
+          function (gltf) {
+            splatMesh.setReferenceScene(gltf.scene, gltf.animations[0]);
+            //threeScene.add(gltf.scene);
+            if (onFinished) {
+                onFinished();
+            }
+          },
+
+          function (xhr) {},
+
+          function (error) {
+            console.log("An error happened" + error);
+          }
+        );
     }
 
     /**
@@ -1003,6 +1030,7 @@ export class Viewer {
      */
     start() {
         if (this.selfDrivenMode) {
+            //this.clock
             if (this.webXRMode) {
                 this.renderer.setAnimationLoop(this.selfDrivenUpdateFunc);
             } else {

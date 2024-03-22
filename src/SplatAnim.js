@@ -9,13 +9,28 @@ export class SplatAnim {
     this.orientations = [];
     this.scales = [];
     this.faceCenters = [];
+    this.mixer = null;
   }
 
-  setReferenceScene(scene) {
+  update(deltaTime) {
+    if (!this.mixer) {
+      return;
+    }
+
+    this.mixer.update(deltaTime);
+    this.referenceScene.updateMatrixWorld(true);
+
+    this.updateMesh();
+  }
+
+  setReferenceScene(scene, animation) {
     if (this.referenceScene != scene) {
       this.referenceScene = scene;
+      this.mixer = new THREE.AnimationMixer(this.referenceScene);
 
-      this.referenceScene.updateMatrixWorld(true);
+      if (animation) {
+        this.mixer.clipAction(animation).play();
+      }
 
       this.referenceMesh = this.referenceScene.getObjectByProperty(
         "isSkinnedMesh",
@@ -24,6 +39,25 @@ export class SplatAnim {
 
       this.updateMesh();
     }
+  }
+
+  initSplatData(splatBuffers) {
+    this.initialSplatData = splatBuffers.map((splatBuffer) => {
+      const count = splatBuffer.getMaxSplatCount();
+      const data = [];
+      for (let i = 0; i < count; ++i) {
+        const center = new THREE.Vector3();
+        const scale = new THREE.Vector3();
+        const rotation = new THREE.Quaternion();
+
+        const binding = splatBuffer.getBinding(i);
+        splatBuffer.getSplatCenter(i, center);
+        splatBuffer.getSplatScaleAndRotation(i, scale, rotation);
+
+        data.push({ binding, center, scale, rotation });
+      }
+      return data;
+    });
   }
 
   updateMesh() {
@@ -66,7 +100,14 @@ export class SplatAnim {
     this.faceCenters = faceCenters;
     this.triangles = triangles;
     this.orientations = orientations.map((i) => i.orientation);
-    this.quats = orientations.map(i => new THREE.Quaternion().setFromRotationMatrix(i.orientation).normalize());
+    this.quats = this.orientations
+      .map((matrix) => {
+        return new THREE.Matrix4().setFromMatrix3(matrix);
+      })
+      .map((matrix) =>
+        new THREE.Quaternion().setFromRotationMatrix(matrix).normalize()
+      );
+
     this.scales = orientations.map((i) => i.scale);
     this.scale = this.scales.reduce((a, b) => a + b, 0) / this.scales.length;
   }
@@ -94,7 +135,8 @@ export class SplatAnim {
     const tangent = new THREE.Vector3().crossVectors(normal, edge1).normalize();
     const bitangent = new THREE.Vector3()
       .crossVectors(normal, tangent)
-      .normalize();
+      .normalize()
+      .multiplyScalar(-1);
 
     const orientation = new THREE.Matrix3().set(
       tangent.x,
@@ -115,9 +157,29 @@ export class SplatAnim {
     return { orientation, scale };
   }
 
+  applyMeshBinding(splatBuffers) {
+    const center = new THREE.Vector3();
+    const scale = new THREE.Vector3();
+    const rotation = new THREE.Quaternion();
+
+    splatBuffers.forEach((splatBuffer, i) => {
+      const count = splatBuffer.getMaxSplatCount();
+      for (let j = 0; j < count; ++j) {
+        const data = this.initialSplatData[i][j];
+        center.copy(data.center);
+        scale.copy(data.scale);
+        rotation.copy(data.rotation);
+        this.applyBindingTransform(data.binding, center, scale, rotation);
+        splatBuffer.setSplatCenter(j, center);
+        splatBuffer.setSplatScaleAndRotation(j, scale, rotation);
+      }
+    });
+  }
+
   applyBindingTransform(binding, position, scale, rotation) {
     if (binding >= this.faces.length) {
       position.set(0, 0, 0);
+      scale.set(0, 0, 0);
       return;
     }
 
@@ -127,9 +189,9 @@ export class SplatAnim {
       .add(this.faceCenters[binding]);
 
     scale.set(
-      Math.exp(scale.x) * this.scales[binding].x,
-      Math.exp(scale.y) * this.scales[binding].y,
-      Math.exp(scale.z) * this.scales[binding].z
+      Math.exp(scale.x) * this.scales[binding],
+      Math.exp(scale.y) * this.scales[binding],
+      Math.exp(scale.z) * this.scales[binding]
     );
 
     rotation.multiply(this.quats[binding]).normalize();

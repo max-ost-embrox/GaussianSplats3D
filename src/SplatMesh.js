@@ -6,6 +6,7 @@ import { WebGLCapabilities } from './three-shim/WebGLCapabilities.js';
 import { uintEncodedFloat, rgbaArrayToInteger } from './Util.js';
 import { Constants } from './Constants.js';
 import { SceneRevealMode } from './SceneRevealMode.js';
+import { SplatAnim } from './SplatAnim.js';
 
 const dummyGeometry = new THREE.BufferGeometry();
 const dummyMaterial = new THREE.MeshBasicMaterial();
@@ -34,6 +35,7 @@ export class SplatMesh extends THREE.Mesh {
         // this splat mesh will not have their scene transform applied to them if the splat mesh is dynamic. That
         // can be overriden via parameters to the individual functions that are used to retrieve splat data.
         this.dynamicMode = dynamicMode;
+        this.splatAnim = new SplatAnim();
         // Ratio of the resolution in physical pixels to the resolution in CSS pixels for the current display device
         this.devicePixelRatio = devicePixelRatio;
         // Use a transform feedback to calculate splat distances from the camera
@@ -44,6 +46,7 @@ export class SplatMesh extends THREE.Mesh {
         this.scenes = [];
         // Special octree tailored to SplatMesh instances
         this.splatTree = null;
+        this.debugScene = new THREE.Scene();
         // Textures in which splat data will be stored for rendering
         this.splatDataTextures = {};
         this.distancesTransformFeedback = {
@@ -79,6 +82,10 @@ export class SplatMesh extends THREE.Mesh {
         this.visibleRegionChanging = false;
 
         this.disposed = false;
+    }
+
+    setReferenceScene(scene, animation) {
+        this.splatAnim.setReferenceScene(scene, animation);
     }
 
     /**
@@ -541,6 +548,13 @@ export class SplatMesh extends THREE.Mesh {
         });
     };
 
+    syncWithAnim() {
+        if (this.splatBuffers) {
+            this.splatAnim.applyMeshBinding(this.splatBuffers);
+            this.resetGPUDataFromSplatBuffers(false);
+        }
+    }
+
     /**
      * Construct this instance of SplatMesh.
      * @param {Array<SplatBuffer>} splatBuffers The base splat data, instances of SplatBuffer
@@ -566,9 +580,16 @@ export class SplatMesh extends THREE.Mesh {
      */
     build(splatBuffers, sceneOptions, keepSceneTransforms = true, finalBuild = false,
           onSplatTreeIndexesUpload, onSplatTreeConstruction) {
-
+        
+        let isUpdateBuild = true;
         this.finalBuild = finalBuild;
-
+      
+        if (finalBuild){
+          this.splatAnim.initSplatData(splatBuffers);
+          this.splatBuffers = splatBuffers;
+          this.syncWithAnim();
+        }
+   
         const maxSplatCount = SplatMesh.getTotalMaxSplatCountForSplatBuffers(splatBuffers);
 
         const newScenes = SplatMesh.buildScenes(splatBuffers, sceneOptions);
@@ -581,7 +602,6 @@ export class SplatMesh extends THREE.Mesh {
         }
         this.scenes = newScenes;
 
-        let isUpdateBuild = true;
         if (this.scenes.length > 1 ||
             this.lastBuildSceneCount !== this.scenes.length ||
             this.lastBuildMaxSplatCount !== maxSplatCount ||
@@ -765,7 +785,7 @@ export class SplatMesh extends THREE.Mesh {
             const centers = new Float32Array(maxSplatCount * 3);
             const colors = new Uint8Array(maxSplatCount * 4);
             this.fillSplatDataArrays(covariances, centers, colors);
-
+            console.log(covariances);
             // set up covariances data texture
             const covTexSize = computeDataTextureSize(COVARIANCES_ELEMENTS_PER_TEXEL, 6);
             let CovariancesDataType = this.halfPrecisionCovariancesOnGPU ? Uint16Array : Float32Array;
