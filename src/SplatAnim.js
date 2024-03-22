@@ -4,7 +4,7 @@ export class SplatAnim {
   constructor() {
     this.referenceScene = null;
     this.referenceMesh = null;
-    this.faces = [];
+    this.faces = null;
     this.triangles = [];
     this.orientations = [];
     this.scales = [];
@@ -20,7 +20,9 @@ export class SplatAnim {
     this.mixer.update(deltaTime);
     this.referenceScene.updateMatrixWorld(true);
 
+    console.time("updateMesh");
     this.updateMesh();
+    console.timeEnd("updateMesh");
   }
 
   setReferenceScene(scene, animation) {
@@ -37,11 +39,13 @@ export class SplatAnim {
         true
       );
 
+      this.faces = null;
       this.updateMesh();
     }
   }
 
   initSplatData(splatBuffers) {
+    let maxBinding = 0;
     this.initialSplatData = splatBuffers.map((splatBuffer) => {
       const count = splatBuffer.getMaxSplatCount();
       const data = [];
@@ -50,7 +54,7 @@ export class SplatAnim {
         const scale = new THREE.Vector3();
         const rotation = new THREE.Quaternion();
         const binding = splatBuffer.getBinding(i);
-
+        maxBinding = Math.max(maxBinding, binding);
         splatBuffer.getSplatCenter(i, center);
         splatBuffer.getSplatScaleAndRotation(i, scale, rotation);
 
@@ -60,6 +64,8 @@ export class SplatAnim {
       }
       return data;
     });
+
+    console.log("BINDINGS", maxBinding);
   }
 
   updateMesh() {
@@ -70,22 +76,28 @@ export class SplatAnim {
 
     mesh.updateMatrixWorld(true);
 
-    const geometry = mesh.geometry;
-    const indices = geometry.getIndex().array;
+    if (!this.faces) {
+      const geometry = mesh.geometry;
+      const indices = geometry.getIndex().array;
 
-    const faces = [];
+      const faces = [];
 
-    for (let i = 0; i < indices.length; i += 3) {
-      faces.push([indices[i + 0], indices[i + 1], indices[i + 2]]);
+      for (let i = 0; i < indices.length; i += 3) {
+        faces.push([indices[i + 0], indices[i + 1], indices[i + 2]]);
+      }
+
+      this.faces = faces;
     }
 
-    const triangles = faces.map((face) => {
+    console.time("updateMesh.1");
+    const triangles = this.faces.map((face) => {
       return [
         mesh.getVertexPosition(face[0], new THREE.Vector3()),
         mesh.getVertexPosition(face[1], new THREE.Vector3()),
         mesh.getVertexPosition(face[2], new THREE.Vector3()),
       ];
     });
+    console.timeEnd("updateMesh.1");
 
     const faceCenters = triangles.map((triangle) => {
       return new THREE.Vector3()
@@ -98,9 +110,7 @@ export class SplatAnim {
       this.createOrientationMatrix(triangle)
     );
 
-    this.faces = faces;
     this.faceCenters = faceCenters;
-    this.triangles = triangles;
     this.orientations = orientations.map((i) => i.orientation);
     this.quats = this.orientations
       .map((matrix) => {
@@ -187,13 +197,13 @@ export class SplatAnim {
 
     position
       .applyMatrix3(this.orientations[binding])
-      .multiplyScalar(this.scale)
+      .multiplyScalar(this.scales[binding])
       .add(this.faceCenters[binding]);
 
     scale.set(
-      Math.exp(scale.x) * this.scales[binding],
-      Math.exp(scale.y) * this.scales[binding],
-      Math.exp(scale.z) * this.scales[binding]
+      scale.x * this.scales[binding],
+      scale.y * this.scales[binding],
+      scale.z * this.scales[binding]
     );
 
     rotation.multiply(this.quats[binding]).normalize();
