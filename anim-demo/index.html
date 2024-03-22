@@ -28,9 +28,10 @@
     <script type="module">
       import * as GaussianSplats3D from "@mkkellogg/gaussian-splats-3d";
       const viewer = new GaussianSplats3D.Viewer({
-        cameraUp: [0, -1, -0.17],
-        initialCameraPosition: [-5, -1, -1],
-        initialCameraLookAt: [-1.72477, 0.05395, -0.00147],
+        cameraUp: [0, 1, 0],
+        initialCameraPosition: [-2, 0, 0],
+        initialCameraLookAt: [0,0,0],
+        dynamicScene: true,
       });
 
       viewer.loadReferenceMesh("assets/data/base_mesh.glb", function () {
@@ -41,6 +42,7 @@
           .then(() => {
             viewer.start();
           });
+          
       });
     </script>
   </body>

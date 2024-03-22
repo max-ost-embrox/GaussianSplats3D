@@ -122,6 +122,51 @@ export class SplatBuffer {
         if (transform) outCenter.applyMatrix4(transform);
     }
 
+    setSplatCenter(globalSplatIndex, center) {
+        const sectionIndex = this.globalSplatIndexToSectionMap[globalSplatIndex];
+        const section = this.sections[sectionIndex];
+        const localSplatIndex = globalSplatIndex - section.splatCountOffset;
+        if (this.compressionLevel === 1) {
+            const centerBase = localSplatIndex * this.uint16PerSplat;
+            const bucketIndex = this.getBucketIndex(section, localSplatIndex);
+            const bucketBase = bucketIndex * SplatBuffer.BucketStorageSizeFloats;
+            const sf = section.compressionScaleFactor;
+            const sr = section.compressionScaleRange;
+            outCenter.x = (section.dataArrayUint16[centerBase] - sr) * sf + section.bucketArray[bucketBase];
+            outCenter.y = (section.dataArrayUint16[centerBase + 1] - sr) * sf + section.bucketArray[bucketBase + 1];
+            outCenter.z = (section.dataArrayUint16[centerBase + 2] - sr) * sf + section.bucketArray[bucketBase + 2];
+        } else {
+            const centerBase = localSplatIndex * this.float32PerSplat;
+            section.dataArrayFloat32[centerBase] = center.x;
+            section.dataArrayFloat32[centerBase + 1] = center.y;
+            section.dataArrayFloat32[centerBase + 2] = center.z;
+        }
+    }
+
+
+    setSplatScaleAndRotation(index, scale, rotation) {
+        const sectionIndex = this.globalSplatIndexToSectionMap[index];
+        const section = this.sections[sectionIndex];
+        const localSplatIndex = index - section.splatCountOffset;
+
+        const floatsPerSplat = this.compressionLevel === 1 ? this.uint16PerSplat : this.float32PerSplat;
+
+        const sectionFloatArray = this.compressionLevel === 1 ? section.dataArrayUint16 : section.dataArrayFloat32;
+        const splatFloatBase = floatsPerSplat * localSplatIndex;
+
+        const scaleBase = splatFloatBase + SplatBuffer.SplatScaleOffsetFloat;
+        sectionFloatArray[scaleBase] = scale.x;
+        sectionFloatArray[scaleBase + 1] = scale.y;
+        sectionFloatArray[scaleBase + 2] = scale.z;
+        
+
+        const rotationBase = splatFloatBase + SplatBuffer.SplatRotationOffsetFloat;
+        sectionFloatArray[rotationBase + 1] = rotation.x;
+        sectionFloatArray[rotationBase + 2] = rotation.y;
+        sectionFloatArray[rotationBase + 3] = rotation.z;
+        sectionFloatArray[rotationBase + 0] = rotation.w;
+    }
+
     getSplatScaleAndRotation = function() {
 
         const scaleMatrix = new THREE.Matrix4();
@@ -584,7 +629,8 @@ export class SplatBuffer {
                                                       targetSplat[UncompressedSplatArray.OFFSET.FDC0],
                                                       targetSplat[UncompressedSplatArray.OFFSET.FDC1],
                                                       targetSplat[UncompressedSplatArray.OFFSET.FDC2],
-                                                      targetSplat[UncompressedSplatArray.OFFSET.OPACITY]);
+                                                      targetSplat[UncompressedSplatArray.OFFSET.OPACITY],
+                                                      targetSplat[UncompressedSplatArray.OFFSET.BINDING]);
                 }
             }
 
@@ -594,7 +640,7 @@ export class SplatBuffer {
             const partiallyFilledBucketCount = partiallyFullBucketLengths.length;
             const buckets = [...bucketInfo.fullBuckets, ...bucketInfo.partiallyFullBuckets];
 
-            const sectionDataSizeBytes = validSplats.splats.length * bytesPerSplat;
+            const sectionDataSizeBytes = validSplats.splats.length * bytesPerSplat + validSplats.splats.length * 4;
             const bucketMetaDataSizeBytes = partiallyFilledBucketCount * 4;
             const bucketDataBytes = compressionLevel === 1 ? buckets.length *
                                                              SplatBuffer.BucketStorageSizeBytes + bucketMetaDataSizeBytes : 0;
