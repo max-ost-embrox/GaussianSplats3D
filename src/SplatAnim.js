@@ -49,10 +49,12 @@ export class SplatAnim {
         const center = new THREE.Vector3();
         const scale = new THREE.Vector3();
         const rotation = new THREE.Quaternion();
-
         const binding = splatBuffer.getBinding(i);
+
         splatBuffer.getSplatCenter(i, center);
         splatBuffer.getSplatScaleAndRotation(i, scale, rotation);
+
+        rotation.normalize();
 
         data.push({ binding, center, scale, rotation });
       }

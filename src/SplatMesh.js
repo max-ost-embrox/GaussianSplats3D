@@ -785,7 +785,7 @@ export class SplatMesh extends THREE.Mesh {
             const centers = new Float32Array(maxSplatCount * 3);
             const colors = new Uint8Array(maxSplatCount * 4);
             this.fillSplatDataArrays(covariances, centers, colors);
-            console.log(covariances);
+            
             // set up covariances data texture
             const covTexSize = computeDataTextureSize(COVARIANCES_ELEMENTS_PER_TEXEL, 6);
             let CovariancesDataType = this.halfPrecisionCovariancesOnGPU ? Uint16Array : Float32Array;

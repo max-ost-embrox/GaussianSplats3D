@@ -419,8 +419,7 @@ export class Viewer {
                                           this.cameraFocalLengthY = this.camera.projectionMatrix.elements[5] *
                                           this.devicePixelRatio * renderDimensions.y * 0.45;
                 this.splatMesh.updateUniforms(renderDimensions, this.cameraFocalLengthX, this.cameraFocalLengthY);
-
-                this.splatMesh.splatAnim.update(0.1);
+                this.splatMesh.splatAnim.update(this.animClock.getDelta());
                 this.splatMesh.syncWithAnim();
             }
         };
@@ -1030,7 +1029,8 @@ export class Viewer {
      */
     start() {
         if (this.selfDrivenMode) {
-            //this.clock
+            this.animClock = new THREE.Clock(true)
+
             if (this.webXRMode) {
                 this.renderer.setAnimationLoop(this.selfDrivenUpdateFunc);
             } else {
