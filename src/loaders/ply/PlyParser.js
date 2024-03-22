@@ -9,7 +9,7 @@ export class PlyParser {
     static HeaderEndToken = 'end_header';
 
     static Fields = ['scale_0', 'scale_1', 'scale_2', 'rot_0', 'rot_1', 'rot_2', 'rot_3',
-                     'x', 'y', 'z', 'f_dc_0', 'f_dc_1', 'f_dc_2', 'red', 'green', 'blue', 'opacity'];
+                     'x', 'y', 'z', 'f_dc_0', 'f_dc_1', 'f_dc_2', 'red', 'green', 'blue', 'opacity', 'binding_0'];
 
     static checkTextForEndHeader(endHeaderTestText) {
         if (endHeaderTestText.includes(PlyParser.HeaderEndToken)) {
@@ -130,17 +130,23 @@ export class PlyParser {
         const outBytesPerCenter = SplatBuffer.CompressionLevels[0].BytesPerCenter;
         const outBytesPerScale = SplatBuffer.CompressionLevels[0].BytesPerScale;
         const outBytesPerRotation = SplatBuffer.CompressionLevels[0].BytesPerRotation;
+        const outBytesPerBinding = SplatBuffer.CompressionLevels[0].BytesPerBinding;
         const outBytesPerSplat = SplatBuffer.CompressionLevels[0].BytesPerSplat;
-
+        
+        const initialOffset = toBuffer.byteLength - (header.splatCount * outBytesPerSplat) - (header.splatCount * outBytesPerBinding);
+        
         for (let i = fromSplat; i <= toSplat; i++) {
-
             const parsedSplat = PlyParser.parseToUncompressedSplat(vertexData, i, header, vertexDataOffset);
+
+            const globalIndex = ((toOffset - initialOffset) / outBytesPerSplat) + i;
 
             const outBase = i * outBytesPerSplat + toOffset;
             const outCenter = new Float32Array(toBuffer, outBase, 3);
             const outScale = new Float32Array(toBuffer, outBase + outBytesPerCenter, 3);
             const outRotation = new Float32Array(toBuffer, outBase + outBytesPerCenter + outBytesPerScale, 4);
             const outColor = new Uint8Array(toBuffer, outBase + outBytesPerCenter + outBytesPerScale + outBytesPerRotation, 4);
+            const outBindingOffset = initialOffset + (header.splatCount * outBytesPerSplat) + (globalIndex * outBytesPerBinding);
+            const outBinding = new Uint32Array(toBuffer, outBindingOffset, 1);
 
             outCenter[0] = parsedSplat[UncompressedSplatArray.OFFSET.X];
             outCenter[1] = parsedSplat[UncompressedSplatArray.OFFSET.Y];
@@ -159,6 +165,8 @@ export class PlyParser {
             outColor[1] = parsedSplat[UncompressedSplatArray.OFFSET.FDC1];
             outColor[2] = parsedSplat[UncompressedSplatArray.OFFSET.FDC2];
             outColor[3] = parsedSplat[UncompressedSplatArray.OFFSET.OPACITY];
+
+            outBinding[0] = parsedSplat[UncompressedSplatArray.OFFSET.BINDING];
         }
     }
 
@@ -197,6 +205,9 @@ export class PlyParser {
             }
             if (rawVertex['opacity'] !== undefined) {
                 newSplat[UncompressedSplatArray.OFFSET.OPACITY] = (1 / (1 + Math.exp(-rawVertex['opacity']))) * 255;
+            }
+            if (rawVertex['binding_0'] !== undefined) {
+                newSplat[UncompressedSplatArray.OFFSET.BINDING] = rawVertex['binding_0'];
             }
 
             newSplat[UncompressedSplatArray.OFFSET.FDC0] = clamp(Math.floor(newSplat[UncompressedSplatArray.OFFSET.FDC0]), 0, 255);

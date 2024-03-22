@@ -85,8 +85,8 @@ export class PlyLoader {
                             maxSplatCount = header.splatCount;
                             readyToLoadSplatData = true;
                         }
-
-                        const splatBufferSizeBytes = splatDataOffsetBytes + SplatBuffer.CompressionLevels[0].BytesPerSplat * maxSplatCount;
+                            
+                        const splatBufferSizeBytes = splatDataOffsetBytes + (SplatBuffer.CompressionLevels[0].BytesPerSplat * maxSplatCount) + (SplatBuffer.CompressionLevels[0].BytesPerBinding * maxSplatCount);
                         streamBufferOut = new ArrayBuffer(splatBufferSizeBytes);
                         SplatBuffer.writeHeaderToBuffer({
                             versionMajor: SplatBuffer.CurrentMajorVersion,

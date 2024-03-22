@@ -25,6 +25,7 @@ export class SplatBuffer {
             BytesPerColor: 4,
             BytesPerScale: 12,
             BytesPerRotation: 16,
+            BytesPerBinding: 4,
             BytesPerSplat: 44,
             ScaleRange: 1
         },
@@ -33,6 +34,7 @@ export class SplatBuffer {
             BytesPerColor: 4,
             BytesPerScale: 6,
             BytesPerRotation: 8,
+            BytesPerBinding: 4,
             BytesPerSplat: 24,
             ScaleRange: 32767
         }
@@ -89,6 +91,13 @@ export class SplatBuffer {
             }
         }
         return bucketIndex;
+    }
+
+    getBinding(globalSplatIndex) {
+        const sectionIndex = this.globalSplatIndexToSectionMap[globalSplatIndex];
+        const section = this.sections[sectionIndex];
+        const localSplatIndex = globalSplatIndex - section.splatCountOffset;
+        return section.dataArrayBinding[localSplatIndex];
     }
 
     getSplatCenter(globalSplatIndex, outCenter, transform) {
@@ -490,6 +499,8 @@ export class SplatBuffer {
             section.dataArrayUint16 = new Uint16Array(this.bufferData, section.dataBase, section.maxSplatCount * this.uint16PerSplat);
             section.dataArrayUint32 = new Uint32Array(this.bufferData, section.dataBase, section.maxSplatCount * this.uint32PerSplat);
             section.dataArrayFloat32 = new Float32Array(this.bufferData, section.dataBase, section.maxSplatCount * this.float32PerSplat);
+            section.dataArrayBinding = new Uint32Array(this.bufferData, section.dataBase + this.bytesPerSplat * section.maxSplatCount, section.maxSplatCount);
+            
             section.bucketArray = new Float32Array(this.bufferData, section.bucketsBase,
                                                    section.bucketCount * SplatBuffer.BucketStorageSizeFloats);
             if (section.partiallyFilledBucketCount > 0) {
