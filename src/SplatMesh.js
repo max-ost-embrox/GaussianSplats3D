@@ -627,7 +627,7 @@ export class SplatMesh extends THREE.Mesh {
         }
 
         if (this.enableDistancesComputationOnGPU) this.setupDistancesComputationTransformFeedback();
-        this.resetGPUDataFromSplatBuffers(isUpdateBuild);
+       // this.resetGPUDataFromSplatBuffers(isUpdateBuild);
 
         for (let i = 0; i < this.scenes.length; i++) {
             this.lastBuildScenes[i] = this.scenes[i];
