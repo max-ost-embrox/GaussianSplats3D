@@ -497,10 +497,11 @@ export class Viewer {
             throw new Error('Cannot add splat scene after dispose() is called.');
         }
 
-        let format = options.format;
-        if (format === undefined || format === null) {
-            format = sceneFormatFromPath(path);
-        }
+        // let format = options.format;
+        // if (format === undefined || format === null) {
+        //     format = sceneFormatFromPath(path);
+        // }
+        let format = SceneFormat.Ply
         const streamBuildSections = Viewer.isStreamable(format) && options.streamView;
 
         const splatBufferOptions = {
