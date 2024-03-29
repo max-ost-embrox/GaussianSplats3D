@@ -1,12 +1,13 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <title>Animation Splat Demo</title>
-    <!-- <script type="text/javascript" src="js/util.js"></script> -->
-    <script type="importmap">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <title>Animation Splat Demo</title>
+  <!-- <script type="text/javascript" src="js/util.js"></script> -->
+  <script type="importmap">
       {
         "imports": {
           "three": "./lib/three.module.js",
@@ -15,35 +16,36 @@
         }
       }
     </script>
-    <style>
-      body {
-        background-color: #000000;
-        height: 100vh;
-        margin: 0px;
-      }
-    </style>
-  </head>
+  <style>
+    body {
+      background-color: #000000;
+      height: 100vh;
+      margin: 0px;
+    }
+  </style>
+</head>
 
-  <body>
-    <script type="module">
-      import * as GaussianSplats3D from "@mkkellogg/gaussian-splats-3d";
-      const viewer = new GaussianSplats3D.Viewer({
-        cameraUp: [0, 1, 0],
-        initialCameraPosition: [0.1, 0.1, 1.0],
-        initialCameraLookAt: [0.1,0.05,0.6],
-        dynamicScene: true,
-      });
+<body>
+  <script type="module">
+    import * as GaussianSplats3D from "@mkkellogg/gaussian-splats-3d";
+    const viewer = new GaussianSplats3D.Viewer({
+      cameraUp: [0, 1, 0],
+      initialCameraPosition: [0, 0, 0.5],
+      initialCameraLookAt: [0, 0, 0],
+      dynamicScene: true,
+    });
 
-      viewer.loadReferenceMesh("assets/data/base_mesh.glb", function () {
-        viewer
-          .addSplatScene("assets/data/point_cloud.ply", {
-            streamView: true,
-          })
-          .then(() => {
-            viewer.start();
-          });
-          
-      });
-    </script>
-  </body>
+    viewer.loadReferenceMesh("assets/data/base_mesh.glb", function () {
+      viewer
+        .addSplatScene("assets/data/point_cloud.ply", {
+          streamView: true,
+        })
+        .then(() => {
+          viewer.start();
+        });
+
+    });
+  </script>
+</body>
+
 </html>

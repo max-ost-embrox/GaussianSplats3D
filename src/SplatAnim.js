@@ -84,7 +84,7 @@ export class SplatAnim {
     }
 
     const convertVertex = (v) => {
-        v.set(v.x, -v.z, v.y);
+    //    v.set(v.x, -v.z, v.y);
         return v;
     }
 
