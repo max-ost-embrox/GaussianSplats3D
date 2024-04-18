@@ -262,8 +262,8 @@ export class Viewer {
             this.controls = new OrbitControls(this.camera, this.renderer.domElement);
             this.controls.listenToKeyEvents(window);
             this.controls.rotateSpeed = 0.5;
-            this.controls.maxPolarAngle = Math.PI * .75;
-            this.controls.minPolarAngle = 0.1;
+            // this.controls.maxPolarAngle = Math.PI * .75;
+            // this.controls.minPolarAngle = 0.1;
             this.controls.enableDamping = true;
             this.controls.dampingFactor = 0.05;
             this.controls.target.copy(this.initialCameraLookAt);
