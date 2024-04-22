@@ -40,7 +40,7 @@ export class SplatBuffer {
             BytesPerBinding: 4,
             BytesPerSH_per: 16, // 4*3=12
             BytesPerSH: 240, // 12*3=36
-            BytesPerSplat: 300,
+            BytesPerSplat: 284,
             ScaleRange: 1
         },
         1: {

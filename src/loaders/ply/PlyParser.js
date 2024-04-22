@@ -133,6 +133,7 @@ export class PlyParser {
         const outBytesPerScale = SplatBuffer.CompressionLevels[0].BytesPerScale;
         const outBytesPerRotation = SplatBuffer.CompressionLevels[0].BytesPerRotation;
         const outBytesPerBinding = SplatBuffer.CompressionLevels[0].BytesPerBinding;
+        const outBytesPerColor = SplatBuffer.CompressionLevels[0].BytesPerColor;
         const outBytesPerSplat = SplatBuffer.CompressionLevels[0].BytesPerSplat;
 
         const initialOffset = toBuffer.byteLength - (header.splatCount * outBytesPerSplat) - (header.splatCount * outBytesPerBinding);
@@ -147,6 +148,11 @@ export class PlyParser {
             const outScale = new Float32Array(toBuffer, outBase + outBytesPerCenter, 3);
             const outRotation = new Float32Array(toBuffer, outBase + outBytesPerCenter + outBytesPerScale, 4);
             const outColor = new Uint8Array(toBuffer, outBase + outBytesPerCenter + outBytesPerScale + outBytesPerRotation, 4);
+            const outSH = new Float32Array(
+                toBuffer,
+                outBase + outBytesPerCenter + outBytesPerScale + outBytesPerRotation + outBytesPerColor,
+                60
+            );
             const outBindingOffset = initialOffset + (header.splatCount * outBytesPerSplat) + (globalIndex * outBytesPerBinding);
             const outBinding = new Uint32Array(toBuffer, outBindingOffset, 1);
 
@@ -167,6 +173,10 @@ export class PlyParser {
             outColor[1] = parsedSplat[UncompressedSplatArray.OFFSET.FDC1];
             outColor[2] = parsedSplat[UncompressedSplatArray.OFFSET.FDC2];
             outColor[3] = parsedSplat[UncompressedSplatArray.OFFSET.OPACITY];
+
+            for (let k = 0; k < 60; k++) {
+                outSH[k] = parsedSplat[UncompressedSplatArray.OFFSET.FRC0 + k];
+            }
 
             outBinding[0] = parsedSplat[UncompressedSplatArray.OFFSET.BINDING];
         }
