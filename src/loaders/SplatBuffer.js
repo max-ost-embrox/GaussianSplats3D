@@ -634,8 +634,9 @@ export class SplatBuffer {
         const bytesPerColor = SplatBuffer.CompressionLevels[compressionLevel].BytesPerColor;
         const bytesPerSH = SplatBuffer.CompressionLevels[compressionLevel].BytesPerSH;
         const bytesPerSH_per = SplatBuffer.CompressionLevels[compressionLevel].BytesPerSH_per;
+        const bytesPerBinding = SplatBuffer.CompressionLevels[compressionLevel].BytesPerBinding;
         // const bytesPerSplat = bytesPerCenter + bytesPerScale + bytesPerRotation + bytesPerColor;
-        const bytesPerSplat = bytesPerCenter + bytesPerScale + bytesPerRotation + bytesPerColor + bytesPerSH;
+        const bytesPerSplat = bytesPerCenter + bytesPerScale + bytesPerRotation + bytesPerColor + bytesPerBinding + bytesPerSH;
         const compressionScaleRange = SplatBuffer.CompressionLevels[compressionLevel].ScaleRange;
 
         const sectionBuffers = [];
@@ -723,7 +724,7 @@ export class SplatBuffer {
                     const scaleBase = centerBase + bytesPerCenter;
                     const rotationBase = scaleBase + bytesPerScale;
                     const colorBase = rotationBase + bytesPerRotation;
-                    const SHBase = colorBase + bytesPerColor;
+                    const SHBase = colorBase + bytesPerColor + bytesPerBinding;
                     if (compressionLevel === 0) {
                         const center = new Float32Array(sectionBuffer, centerBase, SplatBuffer.CenterComponentCount);
                         const rot = new Float32Array(sectionBuffer, rotationBase, SplatBuffer.RotationComponentCount);

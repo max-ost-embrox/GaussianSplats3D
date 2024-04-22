@@ -31,7 +31,7 @@ export class SplatMesh extends THREE.Mesh {
         // Reference to a Three.js renderer
         this.renderer = undefined;
         // Use 16-bit floating point values when storing splat covariance data in textures, instead of 32-bit
-        this.halfPrecisionCovariancesOnGPU = halfPrecisionCovariancesOnGPU;
+        this.halfPrecisionCovariancesOnGPU = 0; //halfPrecisionCovariancesOnGPU;
         // When 'dynamicMode' is true, scenes are assumed to be non-static. Dynamic scenes are handled differently
         // and certain optimizations cannot be made for them. Additionally, by default, all splat data retrieved from
         // this splat mesh will not have their scene transform applied to them if the splat mesh is dynamic. That
