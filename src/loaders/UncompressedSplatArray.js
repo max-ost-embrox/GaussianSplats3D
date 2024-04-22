@@ -16,7 +16,8 @@ export class UncompressedSplatArray {
         FDC1: 11,
         FDC2: 12,
         OPACITY: 13,
-        BINDING: 14
+        BINDING: 14,
+        FRC0: 15
     };
 
     constructor() {
@@ -25,7 +26,9 @@ export class UncompressedSplatArray {
     }
 
     static createSplat() {
-        return [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0];
+        // return [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        // return [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0];
+        return [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, ...new Array(60).fill(0)]
     }
 
     addSplat(splat) {
@@ -49,10 +52,15 @@ export class UncompressedSplatArray {
         return newSplat;
     }
 
+    // addSplatFromArray(src, srcIndex) {
+    //     const srcSplat = src.splats[srcIndex];
+    //     this.addSplatFromComonents(srcSplat[0], srcSplat[1], srcSplat[2], srcSplat[3], srcSplat[4], srcSplat[5],
+    //         srcSplat[6], srcSplat[7], srcSplat[8], srcSplat[9],
+    //         srcSplat[10], srcSplat[11], srcSplat[12], srcSplat[13],
+    //         srcSplat[14], srcSplat[15], srcSplat[16], srcSplat[17], srcSplat[18], srcSplat[19], srcSplat[20], srcSplat[21], srcSplat[22]);
+    // }
     addSplatFromArray(src, srcIndex) {
         const srcSplat = src.splats[srcIndex];
-        this.addSplatFromComonents(srcSplat[0], srcSplat[1], srcSplat[2], srcSplat[3], srcSplat[4], srcSplat[5],
-                                   srcSplat[6], srcSplat[7], srcSplat[8], srcSplat[9],
-                                   srcSplat[10], srcSplat[11], srcSplat[12], srcSplat[13], srcSplat[14]);
+        this.addSplat([...srcSplat]);
     }
 }

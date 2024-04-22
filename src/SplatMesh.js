@@ -12,6 +12,8 @@ const dummyGeometry = new THREE.BufferGeometry();
 const dummyMaterial = new THREE.MeshBasicMaterial();
 
 const COVARIANCES_ELEMENTS_PER_SPLAT = 6;
+// const SH_ELEMENTS_PER_SPLAT = 9;
+const SH_ELEMENTS_PER_SPLAT = 60;
 const CENTER_COLORS_ELEMENTS_PER_SPLAT = 4;
 
 const SCENE_FADEIN_RATE_FAST = 0.012;
@@ -105,6 +107,7 @@ export class SplatMesh extends THREE.Mesh {
             attribute uint splatIndex;
 
             uniform highp sampler2D covariancesTexture;
+            uniform highp sampler2D SHColorsTexture;
             uniform highp usampler2D centersColorsTexture;`;
 
         if (dynamicMode) {
@@ -121,6 +124,7 @@ export class SplatMesh extends THREE.Mesh {
             uniform vec2 basisViewport;
             uniform vec2 covariancesTextureSize;
             uniform vec2 centersColorsTextureSize;
+            uniform vec2 SHColorsTextureSize;
             uniform float visibleRegionRadius;
             uniform float visibleRegionFadeStartRadius;
             uniform float firstRenderTime;
@@ -180,7 +184,83 @@ export class SplatMesh extends THREE.Mesh {
                 }
 
                 vPosition = position.xy;
+
+                // color from SH
+                vec4 viewPosition = modelViewMatrix * vec4(position.xyz, 1.0);
+                vec3 worldViewDir = splatCenter - vec3(cameraPosition);
+                worldViewDir = worldViewDir / length(worldViewDir);
+
+                float C1 = 0.4886025119029199f;
+                const float C2[5] = float[5](
+                    1.0925484305920792,
+                    -1.0925484305920792,
+                    0.31539156525252005,
+                    -1.0925484305920792,
+                    0.5462742152960396
+                );
+                const float C3[7] = float[7](
+                    -0.5900435899266435,
+                    2.890611442640554,
+                    -0.4570457994644658,
+                    0.3731763325901154,
+                    -0.4570457994644658,
+                    1.445305721320277,
+                    -0.5900435899266435
+                );
+
+                vec4 SH1 = texture(SHColorsTexture, getDataUV(15, 0, SHColorsTextureSize));
+                vec4 SH2 = texture(SHColorsTexture, getDataUV(15, 1, SHColorsTextureSize));
+                vec4 SH3 = texture(SHColorsTexture, getDataUV(15, 2, SHColorsTextureSize));
+                vec4 SH4 = texture(SHColorsTexture, getDataUV(15, 3, SHColorsTextureSize));
+                vec4 SH5 = texture(SHColorsTexture, getDataUV(15, 4, SHColorsTextureSize));
+                vec4 SH6 = texture(SHColorsTexture, getDataUV(15, 5, SHColorsTextureSize));
+                vec4 SH7 = texture(SHColorsTexture, getDataUV(15, 6, SHColorsTextureSize));
+                vec4 SH8 = texture(SHColorsTexture, getDataUV(15, 7, SHColorsTextureSize));
+                vec4 SH9 = texture(SHColorsTexture, getDataUV(15, 8, SHColorsTextureSize));
+                vec4 SH10 = texture(SHColorsTexture, getDataUV(15, 9, SHColorsTextureSize));
+                vec4 SH11 = texture(SHColorsTexture, getDataUV(15, 10, SHColorsTextureSize));
+                vec4 SH12 = texture(SHColorsTexture, getDataUV(15, 11, SHColorsTextureSize));
+                vec4 SH13 = texture(SHColorsTexture, getDataUV(15, 12, SHColorsTextureSize));
+                vec4 SH14 = texture(SHColorsTexture, getDataUV(15, 13, SHColorsTextureSize));
+                vec4 SH15 = texture(SHColorsTexture, getDataUV(15, 14, SHColorsTextureSize));
+
                 vColor = uintToRGBAVec(sampledCenterColor.r);
+                float x = worldViewDir.x;
+                float y = worldViewDir.y;
+                float z = worldViewDir.z;
+                vColor += C1 * (- x * SH3 - y * SH1 + z * SH2);
+
+                float xx = x * x, yy = y * y, zz = z * z;
+                float xy = x * y, yz = y * z, xz = x * z;
+
+                vColor += (
+                    C2[0] * xy * SH4
+                    + C2[1] * yz * SH5
+                    + C2[2] * (2.0 * zz - xx - yy) * SH6
+                    + C2[3] * xz * SH7
+                    + C2[4] * (xx - yy) * SH8
+                );
+
+                vColor += (
+                    C3[0] * y * (3.0 * xx - yy) * SH9
+                    + C3[1] * xy * z * SH10
+                    + C3[2] * y * (4.0 * zz - xx - yy) * SH11
+                    + C3[3] * z * (2.0 * zz - 3.0 * xx - 3.0 * yy) * SH12
+                    + C3[4] * x * (4.0 * zz - xx - yy) * SH13
+                    + C3[5] * z * (xx - yy) * SH14
+                    + C3[6] * x * (xx - 3.0 * yy) * SH15
+                );
+
+                // vec2 sampledSH01 = texture(SHColorsTexture, getDataUV(23, 0, SHColorsTextureSize)).rg;
+                // vec2 sampledSH23 = texture(SHColorsTexture, getDataUV(23, 1, SHColorsTextureSize)).rg;
+                // vec2 sampledSH45 = texture(SHColorsTexture, getDataUV(23, 2, SHColorsTextureSize)).rg;
+                // vec2 sampledSH67 = texture(SHColorsTexture, getDataUV(23, 3, SHColorsTextureSize)).rg;
+                // vec2 sampledSH89 = texture(SHColorsTexture, getDataUV(23, 4, SHColorsTextureSize)).rg;
+                // float SH_C1 = 0.4886025119029199f;
+                // vColor = uintToRGBAVec(sampledCenterColor.r);
+                // vColor.r += 1.0 * (-SH_C1 * worldViewDir.y * sampledSH01.r + SH_C1 * worldViewDir.z * sampledSH23.g - SH_C1 * worldViewDir.x * sampledSH67.r);
+                // vColor.g += 1.0 * (-SH_C1 * worldViewDir.y * sampledSH01.g + SH_C1 * worldViewDir.z * sampledSH45.r - SH_C1 * worldViewDir.x * sampledSH67.g);
+                // vColor.b += 1.0 * (-SH_C1 * worldViewDir.y * sampledSH23.r + SH_C1 * worldViewDir.z * sampledSH45.g - SH_C1 * worldViewDir.x * sampledSH89.r);
 
                 vec2 sampledCovarianceA = texture(covariancesTexture, getDataUV(3, 0, covariancesTextureSize)).rg;
                 vec2 sampledCovarianceB = texture(covariancesTexture, getDataUV(3, 1, covariancesTextureSize)).rg;
@@ -344,6 +424,10 @@ export class SplatMesh extends THREE.Mesh {
                 'type': 't',
                 'value': null
             },
+            'SHColorsTexture': {
+                'type': 't',
+                'value': null
+            },
             'focal': {
                 'type': 'v2',
                 'value': new THREE.Vector2()
@@ -367,7 +451,11 @@ export class SplatMesh extends THREE.Mesh {
             'centersColorsTextureSize': {
                 'type': 'v2',
                 'value': new THREE.Vector2(1024, 1024)
-            }
+            },
+            'SHColorsTextureSize': {
+                'type': 'v2',
+                'value': new THREE.Vector2(1024, 1024)
+            },
         };
 
         if (dynamicMode) {
@@ -754,6 +842,7 @@ export class SplatMesh extends THREE.Mesh {
 
         const COVARIANCES_ELEMENTS_PER_TEXEL = 2;
         const CENTER_COLORS_ELEMENTS_PER_TEXEL = 4;
+        const SH_COLORS_ELEMENTS_PER_TEXEL = 4;
         const TRANSFORM_INDEXES_ELEMENTS_PER_TEXEL = 1;
 
         const maxSplatCount = this.getMaxSplatCount();
@@ -782,9 +871,10 @@ export class SplatMesh extends THREE.Mesh {
             this.disposeTextures();
 
             const covariances = new Float32Array(maxSplatCount * COVARIANCES_ELEMENTS_PER_SPLAT);
+            const SH = new Float32Array(maxSplatCount * SH_ELEMENTS_PER_SPLAT);
             const centers = new Float32Array(maxSplatCount * 3);
             const colors = new Uint8Array(maxSplatCount * 4);
-            this.fillSplatDataArrays(covariances, centers, colors);
+            this.fillSplatDataArrays(covariances, centers, colors, SH);
 
             // set up covariances data texture
             const covTexSize = computeDataTextureSize(COVARIANCES_ELEMENTS_PER_TEXEL, 6);
@@ -809,11 +899,25 @@ export class SplatMesh extends THREE.Mesh {
             this.material.uniforms.centersColorsTextureSize.value.copy(centersColsTexSize);
             this.material.uniformsNeedUpdate = true;
 
+            // set up SH colors data texture
+            const SHTexSize = computeDataTextureSize(SH_COLORS_ELEMENTS_PER_TEXEL, 60);
+            let SHDataType = Float32Array; //this.halfPrecisionCovariancesOnGPU ? Uint16Array : Float32Array;
+            let SHTextureType = THREE.FloatType; //this.halfPrecisionCovariancesOnGPU ? THREE.HalfFloatType : THREE.FloatType;
+            const paddedSH = new SHDataType(SHTexSize.x * SHTexSize.y * SH_COLORS_ELEMENTS_PER_TEXEL);
+            paddedSH.set(SH);
+            const SHTex = new THREE.DataTexture(paddedSH, SHTexSize.x, SHTexSize.y, THREE.RGBAFormat, SHTextureType);
+            SHTex.needsUpdate = true;
+            this.material.uniforms.SHColorsTexture.value = SHTex;
+            this.material.uniforms.SHColorsTextureSize.value.copy(SHTexSize);
+            this.material.uniformsNeedUpdate = true;
+            console.log("half prec", this.halfPrecisionCovariancesOnGPU);
+
             this.splatDataTextures = {
                 'baseData': {
                     'covariances': covariances,
                     'centers': centers,
-                    'colors': colors
+                    'colors': colors,
+                    'SH': SH
                 },
                 'covariances': {
                     'data': paddedCovariances,
@@ -824,6 +928,11 @@ export class SplatMesh extends THREE.Mesh {
                     'data': paddedCentersCols,
                     'texture': centersColsTex,
                     'size': centersColsTexSize
+                },
+                'SHColors': {
+                    'data': paddedSH,
+                    'texture': SHTex,
+                    'size': SHTexSize
                 }
             };
 
@@ -849,7 +958,7 @@ export class SplatMesh extends THREE.Mesh {
         } else {
 
             this.fillSplatDataArrays(this.splatDataTextures.baseData.covariances,
-                this.splatDataTextures.baseData.centers, this.splatDataTextures.baseData.colors, undefined, true);
+                this.splatDataTextures.baseData.centers, this.splatDataTextures.baseData.colors, this.splatDataTextures.baseData.SH, undefined, true);
 
             const covariancesTextureDescriptor = this.splatDataTextures['covariances'];
             const paddedCovariances = covariancesTextureDescriptor.data;
@@ -1521,11 +1630,12 @@ export class SplatMesh extends THREE.Mesh {
      * @param {boolean} isUpdateBuild Specify whether or not to only update for splats that have been added since the last build.
      * @param {boolean} forceDestFromZero Force destination index to start at 0.
      */
-    fillSplatDataArrays(covariances, centers, colors, applySceneTransform = undefined, isUpdateBuild, forceDestFromZero) {
+    fillSplatDataArrays(covariances, centers, colors, SH, applySceneTransform = undefined, isUpdateBuild, forceDestFromZero) {
 
         this.checkForMultiSceneUpdateCondition(isUpdateBuild, 'fillSplatDataArrays', 'isUpdateBuild');
 
         let destfrom = 0;
+
         for (let i = 0; i < this.scenes.length; i++) {
             if (applySceneTransform === undefined || applySceneTransform === null) {
                 applySceneTransform = this.dynamicMode ? false : true;
@@ -1548,6 +1658,7 @@ export class SplatMesh extends THREE.Mesh {
             }
             if (centers) splatBuffer.fillSplatCenterArray(centers, sceneTransform, srcFrom, srcTo, localDestFrom);
             if (colors) splatBuffer.fillSplatColorArray(colors, scene.minimumAlpha, sceneTransform, srcFrom, srcTo, localDestFrom);
+            if (SH) splatBuffer.fillSplatSHArray(SH, sceneTransform, srcFrom, srcTo, localDestFrom);
             destfrom += splatBuffer.getSplatCount();
         }
     }
@@ -1566,7 +1677,7 @@ export class SplatMesh extends THREE.Mesh {
         const splatCount = this.getSplatCount();
         const fillCount = isUpdateBuild ? splatCount - this.lastBuildSplatCount : splatCount;
         const floatCenters = new Float32Array(fillCount * 3);
-        this.fillSplatDataArrays(null, floatCenters, null, undefined, isUpdateBuild, isUpdateBuild);
+        this.fillSplatDataArrays(null, floatCenters, null, null, undefined, isUpdateBuild, isUpdateBuild);
         let intCenters;
         let componentCount = padFour ? 4 : 3;
         intCenters = new Int32Array(fillCount * componentCount);
@@ -1593,7 +1704,7 @@ export class SplatMesh extends THREE.Mesh {
         const splatCount = this.getSplatCount();
         const fillCount = isUpdateBuild ? splatCount - this.lastBuildSplatCount : splatCount;
         const floatCenters = new Float32Array(fillCount * 3);
-        this.fillSplatDataArrays(null, floatCenters, null, undefined, isUpdateBuild, isUpdateBuild);
+        this.fillSplatDataArrays(null, floatCenters, null, null, undefined, isUpdateBuild, isUpdateBuild);
         if (!padFour) return floatCenters;
         let paddedFloatCenters = new Float32Array(fillCount * 4);
         for (let i = 0; i < fillCount; i++) {

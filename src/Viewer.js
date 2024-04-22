@@ -488,7 +488,6 @@ export class Viewer {
      * @return {AbortablePromise}
      */
     addSplatScene(path, options = {}) {
-
         if (this.isLoading()) {
             throw new Error('Cannot add splat scene while another load is already in progress.');
         }
@@ -597,7 +596,7 @@ export class Viewer {
      * @return {AbortablePromise}
      */
     addSplatScenes(sceneOptions, showLoadingUI = true, onProgress = undefined) {
-
+        console.log("addSplatScenes");
         if (this.isLoading()) {
             throw new Error('Cannot add splat scene while another load is already in progress.');
         }
@@ -689,6 +688,8 @@ export class Viewer {
      * @return {AbortablePromise}
      */
     loadSplatSceneToSplatBufferNonStreaming(path, format, splatAlphaRemovalThreshold, onDownloadComplete, onProgress, onException) {
+        console.log("loadSplatSceneToSplatBufferNonStreaming");
+
         const clearDownloadPromise = () => {
             delete this.downloadPromisesToAbort[loadPromise.id];
         };
@@ -727,6 +728,8 @@ export class Viewer {
      * @return {AbortablePromise}
      */
     loadSplatSceneToSplatBufferStreaming(path, format, splatAlphaRemovalThreshold, onSectionDownloaded, onProgress, onException) {
+        console.log("loadSplatSceneToSplatBufferStreaming");
+
         let firstStreamedSectionBuildResolver;
         let firstStreamedSectionBuildRejecter;
         let fullBuildResolver;
@@ -1525,6 +1528,8 @@ export class Viewer {
         const nodeSize = (node) => {
             return tempMax.copy(node.max).sub(node.min).length();
         };
+
+        const MaximumDistanceToRender = 125;
 
         return function (gatherAllNodes = false) {
 
